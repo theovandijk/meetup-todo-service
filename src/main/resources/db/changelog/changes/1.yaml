@@ -1,0 +1,21 @@
+databaseChangeLog:
+- changeSet:
+    id: 1
+    author: theovandijk
+    changes:
+    - createTable:
+        tableName: TODO_ITEMS
+        columns:
+        - column:
+            name: ID
+            type: int
+            autoIncrement: true
+            constraints:
+              primaryKey: true
+              nullable: false
+        - column:
+            name: TITLE
+            type: varchar(255)
+        - column:
+            name: DONE
+            type: boolean

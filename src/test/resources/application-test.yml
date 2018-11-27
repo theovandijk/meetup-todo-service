@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: jdbc:hsqldb:mem:testdb
+    username: sa
+    password:
+    driver-class-name: org.hsqldb.jdbc.JDBCDriver
+  jpa:
+    database-platform: org.hibernate.dialect.HSQLDialect
+    properties:
+      hibernate:
+        temp:
+          use_jdbc_metadata_defaults: false
+    show-sql: false
+    database: hsql
