@@ -1,5 +1,6 @@
 package demo.todo.baeldung.unit;
 
+import demo.todo.controller.ResourceNotFoundException;
 import demo.todo.controller.TodoController;
 import demo.todo.model.TodoItem;
 import demo.todo.service.TodoService;
@@ -15,10 +16,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
 import java.util.Arrays;
-import java.util.Optional;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.mockito.Mockito.times;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -59,7 +60,7 @@ public class TodoControllerTest {
         // given
         TodoItem preparedTodo = new TodoItem(1L, "Dummy item", false);
         Mockito.when(todoService.getTodo(1L))
-                .thenReturn(Optional.of(preparedTodo));
+                .thenReturn(preparedTodo);
 
         // when
         ResultActions response = mvc.perform(get("/todos/1")
@@ -75,7 +76,7 @@ public class TodoControllerTest {
 
         // given
         Mockito.when(todoService.getTodo(1L))
-                .thenReturn(Optional.empty());
+                .thenThrow(ResourceNotFoundException.class);
 
         // when
         ResultActions response = mvc.perform(get("/todos/1")
@@ -87,31 +88,21 @@ public class TodoControllerTest {
 
     @Test
     public void given204WhenDelete() throws Exception {
-
-        // given
-        Mockito.when(todoService.deleteTodo(1L))
-                .thenReturn(true);
-
         // when
         ResultActions response = mvc.perform(delete("/todos/1")
                 .contentType(MediaType.APPLICATION_JSON));
 
         // then
+        Mockito.verify(todoService, times(1)).deleteTodo(1L);
         response.andExpect(status().isNoContent());
     }
 
     @Test
     public void given404WhenDeleteNotExisting() throws Exception {
+        Mockito.doThrow(ResourceNotFoundException.class).when(todoService).deleteTodo(1L);
 
-        // given
-        Mockito.when(todoService.deleteTodo(1L))
-                .thenReturn(false);
-
-        // when
-        ResultActions response = mvc.perform(delete("/todos/1")
-                .contentType(MediaType.APPLICATION_JSON));
-
-        // then
-        response.andExpect(status().isNotFound());
+        mvc.perform(delete("/todos/1")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
     }
 }

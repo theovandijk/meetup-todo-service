@@ -1,10 +1,13 @@
 package demo.todo.baeldung.unit;
 
+import demo.todo.controller.ResourceNotFoundException;
 import demo.todo.data.TodoRepository;
 import demo.todo.model.TodoItem;
 import demo.todo.service.TodoService;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -16,12 +19,14 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 
 @RunWith(SpringRunner.class)
 public class TodoServiceTest {
 
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
     private TodoService todoService;
-
     @MockBean
     private TodoRepository todoRepository;
 
@@ -57,27 +62,26 @@ public class TodoServiceTest {
                 .thenReturn(Optional.of(preparedTodo));
 
         // when
-        TodoItem todo = todoService.getTodo(1L).get();
+        TodoItem todo = todoService.getTodo(1L);
 
         // then
         assertThat(todo.getTitle()).isEqualTo("Dummy item");
     }
 
     @Test
-    public void returnNoneWhenGetNotExisting() {
+    public void throwExceptionWhenGetNotExisting() {
         // given
         Mockito.when(todoRepository.findById(1L))
                 .thenReturn(Optional.empty());
 
-        // when
-        Optional<TodoItem> todo = todoService.getTodo(1L);
+        thrown.expect(ResourceNotFoundException.class);
 
-        // then
-        assertThat(todo).isNotPresent();
+        // when
+        todoService.getTodo(1L);
     }
 
     @Test
-    public void returnTrueWhenDelete() {
+    public void returnOnDelete() {
         // given
         TodoItem preparedTodo = new TodoItem(1L, "Dummy item", false);
 
@@ -85,23 +89,24 @@ public class TodoServiceTest {
                 .thenReturn(Optional.of(preparedTodo));
 
         // when
-        Boolean result = todoService.deleteTodo(1L);
+        todoService.deleteTodo(1L);
 
         // then
-        assertThat(result).isTrue();
+        Mockito.verify(todoRepository, times(1)).delete(preparedTodo);
     }
 
     @Test
-    public void return404WhenDeleteNotExisting() {
+    public void throwExceptionWhenDeleteNotExisting() {
         // given
         Mockito.when(todoRepository.findById(1L))
                 .thenReturn(Optional.empty());
 
+        thrown.expect(ResourceNotFoundException.class);
+
         // when
-        Boolean result = todoService.deleteTodo(1L);
+        todoService.deleteTodo(1L);
 
         // then
-        Mockito.verify(todoRepository, never()).deleteById(1L);
-        assertThat(result).isFalse();
+        Mockito.verify(todoRepository, never()).delete(Mockito.any(TodoItem.class));
     }
 }
